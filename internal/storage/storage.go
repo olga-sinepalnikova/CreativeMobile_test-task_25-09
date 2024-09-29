@@ -51,6 +51,22 @@ type SongResponse struct {
 	Text        string
 }
 
+type SongRequest struct {
+	Group string `json:"group"`
+	Song  string `json:"song"`
+}
+
+type NewGroup struct {
+	Id   string
+	Name string
+}
+
+type NewSong struct {
+	Id      string
+	Name    string
+	GroupId string
+}
+
 type SongTextResponse struct {
 	Count int
 	Text  string
