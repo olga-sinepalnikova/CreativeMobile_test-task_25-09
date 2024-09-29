@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS song_details (
 CREATE TABLE IF NOT EXISTS verses (
     song_id uuid NOT NULL ,
     FOREIGN KEY (song_id) REFERENCES  songs(id),
-    count integer NOT NULL DEFAULT 0,
+    count integer NOT NULL,
     text text NOT NULL
 );
 

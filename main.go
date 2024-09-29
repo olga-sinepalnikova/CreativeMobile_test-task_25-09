@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/olga-sinepalnikova/creativemobile-testtask/config"
-	"github.com/olga-sinepalnikova/creativemobile-testtask/internal/handler"
+	"github.com/olga-sinepalnikova/creativemobile-testtask/internal/helpers"
 	"github.com/olga-sinepalnikova/creativemobile-testtask/internal/storage"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -30,9 +30,11 @@ func main() {
 	//var verses []storage.Verse
 
 	log.Info("Starting server...")
-	router := handler.New()
+	router := gin.Default()
 
 	router.GET("/lib", getLib)
+	router.GET("/song/:id", getSong)
+	router.POST("/song/", postSong)
 
 	err = router.Run()
 	if err != nil {
@@ -43,24 +45,30 @@ func main() {
 
 func getLib(context *gin.Context) {
 	log.Debug("Get.Lib")
-	result, err := db.Table("songs").
+	limit, offset := helpers.GetLimitAndOffset(context.Query("limit"), context.Query("offset"))
+
+	result := db.Table("songs").
 		Select("songs.name, sd.release_date, sd.link, v.text," +
 			" (SELECT g.name FROM groups g WHERE songs.group_id=g.id)").
 		Joins("INNER JOIN song_details sd ON sd.song_id = songs.id").
-		Joins("INNER JOIN verses v ON v.song_id = sd.song_id AND count=1").Rows()
+		Joins("INNER JOIN verses v ON v.song_id = sd.song_id AND count=1")
+
+	if limit != 0 {
+		result = result.Limit(limit)
+	}
+	if offset != 0 {
+		result = result.Offset(offset)
+	}
+	sqlResult, err := result.Rows()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, err)
 		return
 	}
-	if err := result.Err(); err != nil {
-		context.JSON(http.StatusNotFound, "Nothing found")
-		return
-	}
 
 	var response []storage.SongResponse
-	for result.Next() {
+	for sqlResult.Next() {
 		var tmp storage.SongResponse
-		err = result.Scan(&tmp.Name, &tmp.ReleaseDate, &tmp.Link, &tmp.Text, &tmp.Group)
+		err = sqlResult.Scan(&tmp.Name, &tmp.ReleaseDate, &tmp.Link, &tmp.Text, &tmp.Group)
 		if err != nil {
 			log.Error(err)
 			context.JSON(http.StatusInternalServerError, err)
@@ -71,4 +79,41 @@ func getLib(context *gin.Context) {
 		log.Debug("Appended: ", tmp)
 	}
 	context.JSON(http.StatusOK, response)
+}
+
+func getSong(context *gin.Context) {
+	log.Debug("Get.Song")
+	limit, offset := helpers.GetLimitAndOffset(context.Query("limit"), context.Query("offset"))
+	result := db.Table("verses v").
+		Select("v.count, v.text").
+		Joins("INNER JOIN songs s ON s.id = v.song_id").
+		Where("s.id = ?", context.Param("id"))
+	if limit != 0 {
+		result = result.Limit(limit)
+	}
+	if offset != 0 {
+		result = result.Offset(offset)
+	}
+	sqlResult, err := result.Rows()
+	if err != nil {
+		log.Error(err)
+		context.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	var response []storage.SongTextResponse
+	for sqlResult.Next() {
+		var tmp storage.SongTextResponse
+		err = sqlResult.Scan(&tmp.Count, &tmp.Text)
+		if err != nil {
+			log.Error(err)
+			context.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		response = append(response, tmp)
+	}
+	context.JSON(http.StatusOK, response)
+}
+
+func postSong(context *gin.Context) {
+
 }

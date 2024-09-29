@@ -23,14 +23,6 @@ type Song struct {
 	GroupID uuid.UUID `gorm:"type:uuid"`
 }
 
-type SongResponse struct {
-	Name        string
-	Group       string
-	ReleaseDate string
-	Link        string
-	Text        string
-}
-
 type Group struct {
 	gorm.Model
 	ID   uuid.UUID `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
@@ -49,6 +41,19 @@ type Verse struct {
 	songId uuid.UUID `gorm:"type:uuid"`
 	id     int
 	text   string
+}
+
+type SongResponse struct {
+	Name        string
+	Group       string
+	ReleaseDate string
+	Link        string
+	Text        string
+}
+
+type SongTextResponse struct {
+	Count int
+	Text  string
 }
 
 func New(c config.Config) (*gorm.DB, error) {
