@@ -42,23 +42,8 @@ INSERT INTO songs (id, name, group_id) VALUES
 SET datestyle TO 'DMY';
 INSERT INTO song_details (song_id, release_date, link) VALUES
                                                                  ((SELECT id from songs where name='Heathens'), '16-06-2016', 'https://youtu.be/UprcpdwuwCg'),
-                                                                 ((SELECT id FROM songs WHERE name='Heavy is the Crown'), '24-09-2024', 'https://www.youtube.com/watch?v=5FrhtahQiRc');
---                                                                  ((SELECT id FROM songs WHERE name='Медвежья невеста'), '13-09-2024', '
--- Выйдешь из дому мне навстречу
--- Нежно к шерсти прильнёшь щекой
--- Забывай своё, человечье
--- Будь со мной!
---
--- Выйдешь из дому мне навстречу
--- Нежно к шерсти прильнёшь щекой
--- Забывай своё, человечье
--- Будь со мной!
---
--- Выйдешь из дому мне навстречу
--- Нежно к шерсти прильнёшь щекой
--- Забывай своё, человечье
--- Будь со мной!', 'https://music.yandex.ru/album/33131669/track/130732838');
-
+                                                                 ((SELECT id FROM songs WHERE name='Heavy is the Crown'), '24-09-2024', 'https://www.youtube.com/watch?v=5FrhtahQiRc'),
+                                                                 ((SELECT id FROM songs WHERE name='Медвежья невеста'), '13-09-2024', 'https://music.yandex.ru/album/33131669/track/130732838');
 
 INSERT INTO verses (song_id, count, text) VALUES
     ((SELECT id FROM songs WHERE name='Heathens'), 1, 'All my friends are heathens, take it slow
@@ -162,4 +147,15 @@ INSERT INTO  verses (song_id, count, text) VALUES
 Наше царство - дремучий лес
 Плачет мать: «Ну куда ж ты, дура?!»
 Не иначе, попутал бес'),
-    ((SELECT id FROM songs WHERE name='Медвежья невеста'), 5, 'fdsa')
+    ((SELECT id FROM songs WHERE name='Медвежья невеста'), 5, 'Выйдешь из дому мне навстречу
+Нежно к шерсти прильнёшь щекой
+Забывай своё, человечье
+Будь со мной!'),
+    ((SELECT id FROM songs WHERE name='Медвежья невеста'), 6, 'Выйдешь из дому мне навстречу
+Нежно к шерсти прильнёшь щекой
+Забывай своё, человечье
+Будь со мной!'),
+    ((SELECT id FROM songs WHERE name='Медвежья невеста'), 7, 'Выйдешь из дому мне навстречу
+Нежно к шерсти прильнёшь щекой
+Забывай своё, человечье
+Будь со мной!');
