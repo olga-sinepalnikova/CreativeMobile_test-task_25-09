@@ -37,6 +37,7 @@ func main() {
 	router.GET("/song/:id", getSong)
 	router.POST("/song/", postSong)
 	router.DELETE("/song/:id", deleteSong)
+	router.PATCH("/song/:id", patchSong)
 
 	err = router.Run()
 	if err != nil {
@@ -117,6 +118,8 @@ func getSong(context *gin.Context) {
 }
 
 func postSong(context *gin.Context) {
+	// todo: make extra request to other API (?) and get some info about song \
+	// didn't really understood left like this. Almost works tbh
 	log.Debug("Post.Song")
 	var request struct {
 		Song  string `json:"song"`
@@ -127,25 +130,32 @@ func postSong(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, err)
 		return
 	}
-	var ng storage.NewGroup
-	var ns storage.NewSong
+	var newGroup struct {
+		Id   string
+		Name string
+	}
+	var newSong struct {
+		Id      string
+		Name    string
+		GroupId string
+	}
 
-	ng.Id = uuid.New().String()
-	ng.Name = request.Group
-	result := db.Table("groups").Create(ng)
+	newGroup.Id = uuid.New().String()
+	newGroup.Name = request.Group
+	result := db.Table("groups").Create(newGroup)
 	if result.Error != nil {
 		log.Error(result.Error)
-		log.Debug(ng)
+		log.Debug(newGroup)
 		context.JSON(http.StatusInternalServerError, result.Error)
 		return
 	}
-	ns.Id = uuid.New().String()
-	ns.Name = request.Song
-	ns.GroupId = ng.Id
-	res := db.Table("songs").Create(ns)
+	newSong.Id = uuid.New().String()
+	newSong.Name = request.Song
+	newSong.GroupId = newGroup.Id
+	res := db.Table("songs").Create(newSong)
 	if res.Error != nil {
 		log.Error(res.Error)
-		log.Debug(ns)
+		log.Debug(newSong)
 		context.JSON(http.StatusInternalServerError, res.Error)
 		return
 	}
@@ -176,4 +186,71 @@ func deleteSong(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"Deleted song with id": songId})
+}
+
+func patchSong(context *gin.Context) {
+	log.Debug("Patch.Song")
+	songId := context.Param("id")
+	var request struct {
+		Song        string `json:"song"`
+		Group       string `json:"group"`
+		ReleaseDate string `json:"release_date"`
+		Text        string `json:"text"`
+		Link        string `json:"link"`
+	}
+
+	if err := context.BindJSON(&request); err != nil {
+		log.Error(err)
+		context.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	if request.Song != "" {
+		res := db.Table("songs").Where("id = ?", songId).Update("name", request.Song)
+		if res.Error != nil {
+			log.Error(res.Error)
+			context.JSON(http.StatusInternalServerError, res.Error)
+			return
+		}
+	}
+
+	if request.Group != "" {
+		var tmpSong storage.Song
+		db.Table("songs").Select("group_id").Where("id = ?", songId).First(&tmpSong)
+		res := db.Table("groups").Where("id = ?", tmpSong.GroupID).Update("name", request.Group)
+		if res.Error != nil {
+			log.Error(res.Error)
+			context.JSON(http.StatusInternalServerError, res.Error)
+			return
+		}
+	}
+
+	if request.ReleaseDate != "" {
+		res := db.Table("song_details").Where("song_id = ?", songId).Update("release_date", request.ReleaseDate)
+		if res.Error != nil {
+			log.Error(res.Error)
+			context.JSON(http.StatusInternalServerError, res.Error)
+			return
+		}
+	}
+
+	if request.Link != "" {
+		res := db.Table("song_details").Where("song_id = ?", songId).Update("link", request.Link)
+		if res.Error != nil {
+			log.Error(res.Error)
+			context.JSON(http.StatusInternalServerError, res.Error)
+			return
+		}
+	}
+
+	if request.Text != "" {
+		res := helpers.UpdateSongText(request.Text, songId, db)
+		if res.Error != nil {
+			log.Error(res.Error)
+			context.JSON(http.StatusInternalServerError, res.Error)
+			return
+		}
+	}
+
+	context.JSON(http.StatusOK, "Successfully updated song with id: "+songId)
 }
